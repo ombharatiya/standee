@@ -100,7 +100,8 @@ class CardGenerator:
                    preserveAspectRatio=True, mask='auto')
     
     def _draw_centered_text(self, c, text: str, x: float, y: float, 
-                           width: float, height: float, font_size: int, bold: bool = False):
+                           width: float, height: float, font_size: int, bold: bool = False,
+                           text_padding: float = 10):
         """Draw centered text within a box."""
         font = 'Helvetica-Bold' if bold else 'Helvetica'
         c.setFont(font, font_size)
@@ -109,7 +110,7 @@ class CardGenerator:
         text_width = c.stringWidth(text, font, font_size)
         
         # If text is too wide, reduce font size to fit
-        max_width = width - 20  # Leave 10pt padding on each side
+        max_width = width - (2 * text_padding)
         if text_width > max_width:
             scale_factor = max_width / text_width
             font_size = int(font_size * scale_factor)
@@ -122,7 +123,7 @@ class CardGenerator:
         c.drawString(text_x, text_y, text)
     
     def _draw_wrapped_text(self, c, text: str, x: float, y: float, 
-                          width: float, height: float, font_size: int):
+                          width: float, height: float, font_size: int, text_padding: float = 10):
         """Draw wrapped text centered within a box."""
         style = ParagraphStyle(
             'centered',
@@ -133,11 +134,11 @@ class CardGenerator:
         )
         
         para = Paragraph(text, style)
-        para_width, para_height = para.wrap(width - 20, height)  # 10pt padding each side
+        para_width, para_height = para.wrap(width - (2 * text_padding), height)
         
         # Center vertically
         y_offset = y + (height - para_height) / 2
-        para.drawOn(c, x + 10, y_offset)
+        para.drawOn(c, x + text_padding, y_offset)
     
     def _sanitize_filename(self, name: str) -> str:
         """Convert name to safe filename."""
@@ -174,7 +175,13 @@ class CardGenerator:
             # Layout parameters
             h_padding = cfg['horizontal_padding_pt']
             top_margin = cfg['top_margin_pt']
-            content_width = page_width - (2 * h_padding)  # 196pt
+            text_padding = cfg.get('text_horizontal_padding_pt', 10)
+            content_width = page_width - (2 * h_padding)
+            
+            # Debug output
+            print(f"  Page: {page_width}pt × {page_height}pt")
+            print(f"  Content width: {content_width}pt (padding: {h_padding}pt each side)")
+            print(f"  Text padding: {text_padding}pt each side")
             
             # Section heights
             photo_height = cfg['photo_section_height_pt']
@@ -229,7 +236,8 @@ class CardGenerator:
                 h_padding, y_name,
                 content_width, name_height,
                 cfg['name_font_size_pt'],
-                bold=True
+                bold=False,
+                text_padding=text_padding
             )
             
             # 4. Draw QR section
@@ -256,7 +264,8 @@ class CardGenerator:
                 c, cfg['message_text'],
                 h_padding, y_message,
                 content_width, message_height,
-                cfg['message_font_size_pt']
+                cfg['message_font_size_pt'],
+                text_padding=text_padding
             )
             
             # Bottom empty space remains blue (already filled)
