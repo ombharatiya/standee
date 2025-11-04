@@ -16,7 +16,7 @@
   "_comment_sections": "Section heights (from top to bottom)",
   "photo_section_height_pt": 320,
   "name_box_height_pt_short": 20,
-  "name_box_height_pt_long": 35,
+  "name_box_height_pt_long": 30,
   "qr_section_height_pt": 120,
   "gap_before_message_pt": 0,
   "message_box_height_pt": 30,
@@ -24,7 +24,7 @@
   "_comment_elements": "Element sizes and styling",
   "qr_code_size_pt": 110,
   "name_font_size_pt_short": 12,
-  "name_font_size_pt_long": 8,
+  "name_font_size_pt_long": 10,
   "message_font_size_pt": 10,
   
   "_comment_borders": "Border configuration for sections",

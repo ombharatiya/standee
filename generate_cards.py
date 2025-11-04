@@ -99,6 +99,67 @@ class CardGenerator:
                    width=final_width, height=final_height, 
                    preserveAspectRatio=True, mask='auto')
     
+    def _optimal_line_break(self, text: str, char_threshold: int, max_lines: int = 2):
+        """
+        Break text into lines optimally based on character threshold.
+        Tries to break as close to threshold as possible without exceeding it.
+        """
+        words = text.split()
+        if len(words) == 1:
+            return [text]
+        
+        # For 2 lines, find the optimal break point
+        if max_lines == 2:
+            best_break = 0
+            best_first_line_len = 0
+            
+            # Try each possible break point
+            for i in range(1, len(words)):
+                first_line = ' '.join(words[:i])
+                first_line_len = len(first_line)
+                
+                # Check if this break point is valid (doesn't exceed threshold)
+                if first_line_len <= char_threshold:
+                    # This is a valid break, check if it's closer to threshold
+                    if first_line_len > best_first_line_len:
+                        best_first_line_len = first_line_len
+                        best_break = i
+            
+            # If we found a valid break point, use it
+            if best_break > 0:
+                first_line = ' '.join(words[:best_break])
+                second_line = ' '.join(words[best_break:])
+                return [first_line, second_line]
+            else:
+                # No valid break found, just split in half
+                mid = len(words) // 2
+                first_line = ' '.join(words[:mid])
+                second_line = ' '.join(words[mid:])
+                return [first_line, second_line]
+        
+        # For other cases, use simple greedy approach
+        lines = []
+        current_line = []
+        
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            if len(test_line) <= char_threshold:
+                current_line.append(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                    current_line = [word]
+                else:
+                    lines.append(word)
+                
+                if len(lines) >= max_lines:
+                    break
+        
+        if current_line and len(lines) < max_lines:
+            lines.append(' '.join(current_line))
+        
+        return lines[:max_lines]
+    
     def _draw_centered_text(self, c, text: str, x: float, y: float, 
                            width: float, height: float, font_size: int, bold: bool = False,
                            text_padding: float = 10, allow_multiline: bool = False, max_lines: int = 1):
