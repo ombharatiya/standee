@@ -1,0 +1,342 @@
+#!/usr/bin/env python3
+"""
+PDF Card Generator
+Generates 3" x 7" portrait cards with person image, name, QR code, and message.
+"""
+
+import os
+import sys
+import json
+import csv
+from pathlib import Path
+from typing import Dict, List
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
+from reportlab.lib.colors import HexColor
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.enums import TA_CENTER
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import ParagraphStyle
+from PIL import Image
+
+
+class CardGenerator:
+    """Generates PDF cards from CSV input and configuration."""
+    
+    def __init__(self, config_path: str = "config.json"):
+        """Initialize with configuration file."""
+        self.config = self._load_config(config_path)
+        self.base_dir = Path(__file__).parent
+        
+    def _load_config(self, config_path: str) -> Dict:
+        """Load configuration from JSON file."""
+        try:
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            print(f"Error: Configuration file '{config_path}' not found.")
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            print(f"Error: Invalid JSON in configuration file: {e}")
+            sys.exit(1)
+    
+    def _validate_image(self, image_path: str) -> bool:
+        """Validate that image exists and is readable."""
+        if not os.path.exists(image_path):
+            print(f"Warning: Image not found: {image_path}")
+            return False
+        
+        try:
+            with Image.open(image_path) as img:
+                img.verify()
+            return True
+        except Exception as e:
+            print(f"Warning: Invalid image file {image_path}: {e}")
+            return False
+    
+    def _get_image_dimensions(self, image_path: str) -> tuple:
+        """Get image dimensions."""
+        with Image.open(image_path) as img:
+            return img.size
+    
+    def _read_csv_data(self) -> List[Dict]:
+        """Read person data from CSV file."""
+        csv_path = self.base_dir / self.config['input_csv']
+        
+        if not csv_path.exists():
+            print(f"Error: CSV file not found: {csv_path}")
+            sys.exit(1)
+        
+        data = []
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                data.append(row)
+        
+        return data
+    
+    def _draw_centered_image(self, c, image_path: str, x: float, y: float, 
+                            width: float, height: float, max_width: float, max_height: float):
+        """Draw an image centered within a box, maintaining aspect ratio."""
+        img_width, img_height = self._get_image_dimensions(image_path)
+        
+        # Calculate scaling to fit within max dimensions
+        scale_w = max_width / img_width
+        scale_h = max_height / img_height
+        scale = min(scale_w, scale_h)
+        
+        # Calculate final dimensions
+        final_width = img_width * scale
+        final_height = img_height * scale
+        
+        # Center the image
+        x_offset = x + (width - final_width) / 2
+        y_offset = y + (height - final_height) / 2
+        
+        c.drawImage(image_path, x_offset, y_offset, 
+                   width=final_width, height=final_height, 
+                   preserveAspectRatio=True, mask='auto')
+    
+    def _draw_centered_text(self, c, text: str, x: float, y: float, 
+                           width: float, height: float, font_size: int, bold: bool = False):
+        """Draw centered text within a box."""
+        font = 'Helvetica-Bold' if bold else 'Helvetica'
+        c.setFont(font, font_size)
+        
+        # Calculate text position for vertical centering
+        text_width = c.stringWidth(text, font, font_size)
+        
+        # If text is too wide, reduce font size to fit
+        max_width = width - 20  # Leave 10pt padding on each side
+        if text_width > max_width:
+            scale_factor = max_width / text_width
+            font_size = int(font_size * scale_factor)
+            c.setFont(font, font_size)
+            text_width = c.stringWidth(text, font, font_size)
+        
+        text_x = x + (width - text_width) / 2
+        text_y = y + (height - font_size) / 2
+        
+        c.drawString(text_x, text_y, text)
+    
+    def _draw_wrapped_text(self, c, text: str, x: float, y: float, 
+                          width: float, height: float, font_size: int):
+        """Draw wrapped text centered within a box."""
+        style = ParagraphStyle(
+            'centered',
+            fontName='Helvetica',
+            fontSize=font_size,
+            alignment=TA_CENTER,
+            leading=font_size * 1.25
+        )
+        
+        para = Paragraph(text, style)
+        para_width, para_height = para.wrap(width - 20, height)  # 10pt padding each side
+        
+        # Center vertically
+        y_offset = y + (height - para_height) / 2
+        para.drawOn(c, x + 10, y_offset)
+    
+    def _sanitize_filename(self, name: str) -> str:
+        """Convert name to safe filename."""
+        # Remove/replace unsafe characters
+        safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' 
+                           for c in name)
+        # Replace spaces with underscores and convert to lowercase
+        safe_name = safe_name.strip().replace(' ', '_').lower()
+        return safe_name
+    
+    def generate_card(self, person_name: str, person_image_path: str, 
+                     output_path: str) -> bool:
+        """Generate a single PDF card."""
+        
+        # Validate inputs
+        full_image_path = self.base_dir / person_image_path
+        if not self._validate_image(full_image_path):
+            return False
+        
+        qr_code_path = self.base_dir / self.config['qr_code_path']
+        if not self._validate_image(qr_code_path):
+            print(f"Error: QR code not found: {qr_code_path}")
+            return False
+        
+        cfg = self.config
+        
+        # Create PDF
+        print(f"  Creating PDF...")
+        try:
+            # Page dimensions in points
+            page_width = cfg['page_width_pt']
+            page_height = cfg['page_height_pt']
+            
+            # Layout parameters
+            h_padding = cfg['horizontal_padding_pt']
+            top_margin = cfg['top_margin_pt']
+            content_width = page_width - (2 * h_padding)  # 196pt
+            
+            # Section heights
+            photo_height = cfg['photo_section_height_pt']
+            name_height = cfg['name_box_height_pt']
+            qr_height = cfg['qr_section_height_pt']
+            gap_before_msg = cfg['gap_before_message_pt']
+            message_height = cfg['message_box_height_pt']
+            
+            # Calculate Y positions from TOP (convert to bottom-up for ReportLab)
+            # Top positions (from top edge)
+            y_top_photo = top_margin
+            y_top_name = y_top_photo + photo_height
+            y_top_qr = y_top_name + name_height
+            y_top_message = y_top_qr + qr_height + gap_before_msg
+            
+            # Convert to ReportLab coordinates (from bottom)
+            y_photo = page_height - y_top_photo - photo_height
+            y_name = page_height - y_top_name - name_height
+            y_qr = page_height - y_top_qr - qr_height
+            y_message = page_height - y_top_message - message_height
+            
+            # Create canvas
+            c = canvas.Canvas(output_path, pagesize=(page_width, page_height))
+            
+            # 1. Fill entire page with light blue background
+            c.setFillColor(HexColor(cfg['background_color']))
+            c.rect(0, 0, page_width, page_height, fill=1, stroke=0)
+            
+            # 2. Draw photo section
+            # Draw person image centered within photo section
+            self._draw_centered_image(
+                c, str(full_image_path), 
+                h_padding, y_photo, 
+                content_width, photo_height,
+                content_width, photo_height
+            )
+            
+            # 3. Draw name box
+            # White background
+            c.setFillColor(HexColor('#FFFFFF'))
+            c.rect(h_padding, y_name, content_width, name_height, fill=1, stroke=0)
+            
+            # Bottom border only
+            c.setStrokeColor(HexColor(cfg['border_color']))
+            c.setLineWidth(cfg['border_width_pt'])
+            c.line(h_padding, y_name, h_padding + content_width, y_name)
+            
+            # Draw name text
+            c.setFillColor(HexColor('#000000'))
+            self._draw_centered_text(
+                c, person_name,
+                h_padding, y_name,
+                content_width, name_height,
+                cfg['name_font_size_pt'],
+                bold=True
+            )
+            
+            # 4. Draw QR section
+            # White background
+            c.setFillColor(HexColor('#FFFFFF'))
+            c.rect(h_padding, y_qr, content_width, qr_height, fill=1, stroke=0)
+            
+            # Draw QR code centered
+            qr_size = cfg['qr_code_size_pt']
+            qr_x = h_padding + (content_width - qr_size) / 2
+            qr_y = y_qr + (qr_height - qr_size) / 2
+            c.drawImage(str(qr_code_path), qr_x, qr_y, 
+                       width=qr_size, height=qr_size,
+                       preserveAspectRatio=True)
+            
+            # 5. Draw message box
+            # White background
+            c.setFillColor(HexColor('#FFFFFF'))
+            c.rect(h_padding, y_message, content_width, message_height, fill=1, stroke=0)
+            
+            # Draw message text
+            c.setFillColor(HexColor('#000000'))
+            self._draw_wrapped_text(
+                c, cfg['message_text'],
+                h_padding, y_message,
+                content_width, message_height,
+                cfg['message_font_size_pt']
+            )
+            
+            # Bottom empty space remains blue (already filled)
+            
+            # Save PDF
+            c.save()
+            print(f"  ✓ Successfully created: {output_path}")
+            return True
+            
+        except Exception as e:
+            print(f"  ✗ Error creating PDF: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def generate_all_cards(self) -> None:
+        """Generate PDF cards for all entries in CSV."""
+        
+        # Create output directory
+        output_dir = self.base_dir / self.config['output_directory']
+        output_dir.mkdir(exist_ok=True)
+        
+        # Read CSV data
+        print("Reading CSV data...")
+        data = self._read_csv_data()
+        print(f"Found {len(data)} entries to process.\n")
+        
+        # Generate cards
+        success_count = 0
+        fail_count = 0
+        
+        for idx, row in enumerate(data, 1):
+            person_name = row.get('name', '').strip()
+            person_image = row.get('image', '').strip()
+            
+            if not person_name or not person_image:
+                print(f"[{idx}/{len(data)}] Skipping row with missing data")
+                fail_count += 1
+                continue
+            
+            print(f"[{idx}/{len(data)}] Processing: {person_name}")
+            
+            # Generate output filename
+            safe_name = self._sanitize_filename(person_name)
+            output_filename = f"{safe_name}_card.pdf"
+            output_path = output_dir / output_filename
+            
+            # Generate card
+            if self.generate_card(person_name, person_image, str(output_path)):
+                success_count += 1
+            else:
+                fail_count += 1
+            
+            print()
+        
+        # Summary
+        print("=" * 60)
+        print(f"GENERATION COMPLETE")
+        print(f"  Total: {len(data)}")
+        print(f"  Success: {success_count}")
+        print(f"  Failed: {fail_count}")
+        print(f"  Output directory: {output_dir}")
+        print("=" * 60)
+
+
+def main():
+    """Main entry point."""
+    
+    # Check for arguments
+    config_file = sys.argv[1] if len(sys.argv) > 1 else "config.json"
+    
+    print("=" * 60)
+    print("PDF CARD GENERATOR")
+    print("=" * 60)
+    print(f"Configuration: {config_file}\n")
+    
+    # Create generator and run
+    generator = CardGenerator(config_file)
+    generator.generate_all_cards()
+
+
+if __name__ == "__main__":
+    main()

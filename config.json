@@ -1,0 +1,34 @@
+{
+  "input_csv": "input-sample/input.csv",
+  "qr_code_path": "input-sample/QR_code.jpeg",
+  "output_directory": "output",
+  "message_text": "Know more about HPV related Cancer & its prevention in females and males.",
+  "background_color": "#A8D8F0",
+  
+  "_comment_page": "Page dimensions (1 inch = 72 points)",
+  "page_width_pt": 216,
+  "page_height_pt": 504,
+  
+  "_comment_layout": "Layout spacing and margins",
+  "horizontal_padding_pt": 10,
+  "top_margin_pt": 20,
+  
+  "_comment_sections": "Section heights (from top to bottom)",
+  "photo_section_height_pt": 180,
+  "name_box_height_pt": 40,
+  "qr_section_height_pt": 100,
+  "gap_before_message_pt": 10,
+  "message_box_height_pt": 100,
+  
+  "_comment_elements": "Element sizes and styling",
+  "qr_code_size_pt": 80,
+  "border_width_pt": 1,
+  "border_color": "#CCCCCC",
+  "name_font_size_pt": 14,
+  "message_font_size_pt": 10,
+  
+  "_comment_padding": "Internal padding for text elements",
+  "text_horizontal_padding_pt": 10,
+  
+  "_comment_calculated": "Content width = page_width_pt - (2 * horizontal_padding_pt) = 196pt"
+}
