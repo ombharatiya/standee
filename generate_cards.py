@@ -101,26 +101,65 @@ class CardGenerator:
     
     def _draw_centered_text(self, c, text: str, x: float, y: float, 
                            width: float, height: float, font_size: int, bold: bool = False,
-                           text_padding: float = 10):
-        """Draw centered text within a box."""
+                           text_padding: float = 10, allow_multiline: bool = False, max_lines: int = 1):
+        """Draw centered text within a box, with optional multiline support."""
         font = 'Helvetica-Bold' if bold else 'Helvetica'
         c.setFont(font, font_size)
         
-        # Calculate text position for vertical centering
-        text_width = c.stringWidth(text, font, font_size)
-        
-        # If text is too wide, reduce font size to fit
-        max_width = width - (2 * text_padding)
-        if text_width > max_width:
-            scale_factor = max_width / text_width
-            font_size = int(font_size * scale_factor)
-            c.setFont(font, font_size)
+        if not allow_multiline or max_lines == 1:
+            # Single line mode
             text_width = c.stringWidth(text, font, font_size)
-        
-        text_x = x + (width - text_width) / 2
-        text_y = y + (height - font_size) / 2
-        
-        c.drawString(text_x, text_y, text)
+            max_width = width - (2 * text_padding)
+            
+            if text_width > max_width:
+                scale_factor = max_width / text_width
+                font_size = int(font_size * scale_factor)
+                c.setFont(font, font_size)
+                text_width = c.stringWidth(text, font, font_size)
+            
+            text_x = x + (width - text_width) / 2
+            text_y = y + (height - font_size) / 2
+            c.drawString(text_x, text_y, text)
+        else:
+            # Multiline mode - word-wise breaking
+            max_width = width - (2 * text_padding)
+            words = text.split()
+            lines = []
+            current_line = []
+            
+            for word in words:
+                test_line = ' '.join(current_line + [word])
+                test_width = c.stringWidth(test_line, font, font_size)
+                
+                if test_width <= max_width:
+                    current_line.append(word)
+                else:
+                    if current_line:
+                        lines.append(' '.join(current_line))
+                        current_line = [word]
+                    else:
+                        # Single word too long, add it anyway
+                        lines.append(word)
+                
+                if len(lines) >= max_lines:
+                    break
+            
+            if current_line and len(lines) < max_lines:
+                lines.append(' '.join(current_line))
+            
+            # Limit to max_lines
+            lines = lines[:max_lines]
+            
+            # Draw lines centered
+            line_height = font_size * 1.2
+            total_height = len(lines) * line_height
+            start_y = y + (height - total_height) / 2 + (len(lines) - 1) * line_height
+            
+            for i, line in enumerate(lines):
+                line_width = c.stringWidth(line, font, font_size)
+                text_x = x + (width - line_width) / 2
+                text_y = start_y - (i * line_height)
+                c.drawString(text_x, text_y, line)
     
     def _draw_wrapped_text(self, c, text: str, x: float, y: float, 
                           width: float, height: float, font_size: int, text_padding: float = 10):
@@ -183,12 +222,28 @@ class CardGenerator:
             print(f"  Content width: {content_width}pt (padding: {h_padding}pt each side)")
             print(f"  Text padding: {text_padding}pt each side")
             
+            # Determine name box size based on name length
+            name_length_threshold = cfg.get('name_length_threshold', 22)
+            is_long_name = len(person_name) > name_length_threshold
+            
+            if is_long_name:
+                name_height = cfg['name_box_height_pt_long']
+                name_font_size = cfg['name_font_size_pt_long']
+                name_multiline = True
+            else:
+                name_height = cfg['name_box_height_pt_short']
+                name_font_size = cfg['name_font_size_pt_short']
+                name_multiline = False
+            
             # Section heights
             photo_height = cfg['photo_section_height_pt']
-            name_height = cfg['name_box_height_pt']
             qr_height = cfg['qr_section_height_pt']
             gap_before_msg = cfg['gap_before_message_pt']
             message_height = cfg['message_box_height_pt']
+            
+            # Debug output for name handling
+            print(f"  Name: '{person_name}' ({len(person_name)} chars)")
+            print(f"  Name box: {name_height}pt, Font: {name_font_size}pt, Multiline: {name_multiline}")
             
             # Calculate Y positions from TOP (convert to bottom-up for ReportLab)
             # Top positions (from top edge)
@@ -224,10 +279,22 @@ class CardGenerator:
             c.setFillColor(HexColor('#FFFFFF'))
             c.rect(h_padding, y_name, content_width, name_height, fill=1, stroke=0)
             
-            # Bottom border only
-            c.setStrokeColor(HexColor(cfg['border_color']))
-            c.setLineWidth(cfg['border_width_pt'])
-            c.line(h_padding, y_name, h_padding + content_width, y_name)
+            # Draw borders based on config
+            name_border_sides = cfg.get('name_box_border_sides', [])
+            name_border_width = cfg.get('name_box_border_width_pt', 2)
+            name_border_color = cfg.get('name_box_border_color', '#000000')
+            
+            c.setStrokeColor(HexColor(name_border_color))
+            c.setLineWidth(name_border_width)
+            
+            if 'left' in name_border_sides:
+                c.line(h_padding, y_name, h_padding, y_name + name_height)
+            if 'right' in name_border_sides:
+                c.line(h_padding + content_width, y_name, h_padding + content_width, y_name + name_height)
+            if 'top' in name_border_sides:
+                c.line(h_padding, y_name + name_height, h_padding + content_width, y_name + name_height)
+            if 'bottom' in name_border_sides:
+                c.line(h_padding, y_name, h_padding + content_width, y_name)
             
             # Draw name text
             c.setFillColor(HexColor('#000000'))
@@ -235,15 +302,34 @@ class CardGenerator:
                 c, person_name,
                 h_padding, y_name,
                 content_width, name_height,
-                cfg['name_font_size_pt'],
+                name_font_size,
                 bold=False,
-                text_padding=text_padding
+                text_padding=text_padding,
+                allow_multiline=name_multiline,
+                max_lines=cfg.get('name_max_lines', 2)
             )
             
             # 4. Draw QR section
             # White background
             c.setFillColor(HexColor('#FFFFFF'))
             c.rect(h_padding, y_qr, content_width, qr_height, fill=1, stroke=0)
+            
+            # Draw borders based on config
+            qr_border_sides = cfg.get('qr_section_border_sides', [])
+            qr_border_width = cfg.get('qr_section_border_width_pt', 2)
+            qr_border_color = cfg.get('qr_section_border_color', '#000000')
+            
+            c.setStrokeColor(HexColor(qr_border_color))
+            c.setLineWidth(qr_border_width)
+            
+            if 'left' in qr_border_sides:
+                c.line(h_padding, y_qr, h_padding, y_qr + qr_height)
+            if 'right' in qr_border_sides:
+                c.line(h_padding + content_width, y_qr, h_padding + content_width, y_qr + qr_height)
+            if 'top' in qr_border_sides:
+                c.line(h_padding, y_qr + qr_height, h_padding + content_width, y_qr + qr_height)
+            if 'bottom' in qr_border_sides:
+                c.line(h_padding, y_qr, h_padding + content_width, y_qr)
             
             # Draw QR code centered
             qr_size = cfg['qr_code_size_pt']
@@ -257,6 +343,23 @@ class CardGenerator:
             # White background
             c.setFillColor(HexColor('#FFFFFF'))
             c.rect(h_padding, y_message, content_width, message_height, fill=1, stroke=0)
+            
+            # Draw borders based on config
+            msg_border_sides = cfg.get('message_box_border_sides', [])
+            msg_border_width = cfg.get('message_box_border_width_pt', 2)
+            msg_border_color = cfg.get('message_box_border_color', '#000000')
+            
+            c.setStrokeColor(HexColor(msg_border_color))
+            c.setLineWidth(msg_border_width)
+            
+            if 'left' in msg_border_sides:
+                c.line(h_padding, y_message, h_padding, y_message + message_height)
+            if 'right' in msg_border_sides:
+                c.line(h_padding + content_width, y_message, h_padding + content_width, y_message + message_height)
+            if 'top' in msg_border_sides:
+                c.line(h_padding, y_message + message_height, h_padding + content_width, y_message + message_height)
+            if 'bottom' in msg_border_sides:
+                c.line(h_padding, y_message, h_padding + content_width, y_message)
             
             # Draw message text
             c.setFillColor(HexColor('#000000'))
