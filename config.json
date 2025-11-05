@@ -20,6 +20,7 @@
   "qr_section_height_pt": 120,
   "gap_before_message_pt": 0,
   "message_box_height_pt": 30,
+  "bottom_box_height_pt": 20,
   
   "_comment_elements": "Element sizes and styling",
   "qr_code_size_pt": 110,
@@ -45,6 +46,7 @@
   "_comment_padding": "Internal padding for text elements",
   "text_horizontal_padding_pt": 2,
   "name_box_horizontal_margin_pt": 25,
+  "bottom_box_horizontal_margin_pt": 25,
   
   "_comment_calculated": "Content width = page_width_pt - (2 * horizontal_padding_pt) = 196pt"
 }

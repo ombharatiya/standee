@@ -297,6 +297,7 @@ class CardGenerator:
             qr_height = cfg['qr_section_height_pt']
             gap_before_msg = cfg['gap_before_message_pt']
             message_height = cfg['message_box_height_pt']
+            bottom_box_height = cfg.get('bottom_box_height_pt', 0)
             
             # Debug output for name handling
             print(f"  Name: '{person_name}' ({len(person_name)} chars)")
@@ -308,12 +309,14 @@ class CardGenerator:
             y_top_name = y_top_photo + photo_height
             y_top_qr = y_top_name + name_height
             y_top_message = y_top_qr + qr_height + gap_before_msg
+            y_top_bottom_box = y_top_message + message_height
             
             # Convert to ReportLab coordinates (from bottom)
             y_photo = page_height - y_top_photo - photo_height
             y_name = page_height - y_top_name - name_height
             y_qr = page_height - y_top_qr - qr_height
             y_message = page_height - y_top_message - message_height
+            y_bottom_box = page_height - y_top_bottom_box - bottom_box_height
             
             # Create canvas
             c = canvas.Canvas(output_path, pagesize=(page_width, page_height))
@@ -434,7 +437,18 @@ class CardGenerator:
                 text_padding=text_padding
             )
             
-            # Bottom empty space remains blue (already filled)
+            # 6. Draw bottom box (if height > 0)
+            if bottom_box_height > 0:
+                # Calculate bottom box dimensions with horizontal margins
+                bottom_h_margin = cfg.get('bottom_box_horizontal_margin_pt', 0)
+                bottom_box_x = h_padding + bottom_h_margin
+                bottom_box_width = content_width - (2 * bottom_h_margin)
+                
+                # White background (no borders)
+                c.setFillColor(HexColor('#FFFFFF'))
+                c.rect(bottom_box_x, y_bottom_box, bottom_box_width, bottom_box_height, fill=1, stroke=0)
+            
+            # Remaining space stays blue (already filled)
             
             # Save PDF
             c.save()
