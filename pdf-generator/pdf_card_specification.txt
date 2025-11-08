@@ -1,0 +1,270 @@
+
+================================================================================
+DETAILED SPECIFICATION FOR HTML-TO-PDF GENERATOR
+Design Card: 3" x 7" Portrait Layout
+================================================================================
+
+TARGET PDF SPECIFICATIONS
+--------------------------
+- Page Size: 3 inches (width) x 7 inches (height) - PORTRAIT orientation
+- In Points: 216pt x 504pt (1 inch = 72 points)
+- At 300 DPI: 900px x 2100px
+- Color Mode: RGB
+- Background: Varies by section (light blue for photo, white for text sections)
+
+================================================================================
+LAYOUT BREAKDOWN (Top to Bottom)
+================================================================================
+
+SECTION 1: PHOTO SECTION
+-------------------------
+Position: Top of page
+Height: 4.90 inches (352.8 points)
+Width: 3.00 inches (216 points) - full width
+Background Color: Light blue (#A8D8F0 or similar - sky blue)
+
+Content:
+- Person's portrait/illustration image (PNG with transparency preferred)
+- Image should be centered horizontally
+- Image aspect ratio: maintain original (typically portrait)
+- Recommended image height: 4.5-4.8 inches to fit within section
+- Image should show person from upper torso/chest up
+- Position: Vertically centered within this section
+- Padding: 0.1-0.2 inches from top
+
+Styling:
+- No border
+- Background fills entire section area
+- Image should blend naturally with background
+
+
+SECTION 2: NAME BOX
+-------------------
+Position: Below photo section
+Height: 0.56 inches (40.32 points)
+Width: 3.00 inches (216 points) - full width
+Background Color: White (#FFFFFF)
+
+Content:
+- Person's name/title as text (dynamic input)
+- Example: "Dr. Rohit Sharma"
+- Font: Sans-serif, bold (Arial Bold or Helvetica Bold)
+- Font Size: 24-28pt (adjust based on name length)
+- Font Color: Black (#000000)
+- Text Alignment: Center (both horizontal and vertical)
+- Text Transform: Title case or as provided
+
+Styling:
+- No border
+- No padding (text centered in full box)
+- Single line of text (truncate or reduce font size if too long)
+
+
+SECTION 3: QR CODE SECTION
+---------------------------
+Position: Below name box
+Height: 0.98 inches (70.56 points)
+Width: 3.00 inches (216 points) - full width
+Background Color: White (#FFFFFF)
+
+Content:
+- QR code image (JPEG or PNG)
+- QR code size: 0.85 inches x 0.85 inches (61.2pt x 61.2pt) square
+- Position: Centered both horizontally and vertically within section
+- QR code should have ~0.065 inches (4.68pt) margin on all sides within this section
+
+Styling:
+- No border around QR code
+- QR code should be clear and scannable
+- Maintain square aspect ratio
+- No compression artifacts (use PNG for best quality)
+
+
+SECTION 4: MESSAGE BOX
+----------------------
+Position: Bottom of page (below QR code)
+Height: 0.56 inches (40.32 points)
+Width: 3.00 inches (216 points) - full width
+Background Color: White (#FFFFFF)
+
+Content:
+- Static text message (can be made dynamic if needed)
+- Example: "Know more about HPV related Cancer & its prevention in females and males."
+- Font: Sans-serif, regular weight (Arial or Helvetica)
+- Font Size: 10-11pt
+- Font Color: Black (#000000)
+- Text Alignment: Center (horizontal), middle (vertical)
+- Line Height: 1.2-1.3 (for multi-line text)
+
+Styling:
+- No border
+- Padding: 0.05 inches (3.6pt) on left/right for text breathing room
+- Text should wrap to 2-3 lines if necessary
+- Vertical centering of text block within section
+
+
+================================================================================
+ADDITIONAL SPECIFICATIONS
+================================================================================
+
+MARGINS AND PADDING:
+- Page margins: 0 (full bleed design)
+- All sections span full width (3 inches)
+- No gaps between sections (they are stacked directly)
+
+COLOR SPECIFICATIONS:
+- Photo section background: #A8D8F0 (or adjustable light blue)
+- Name box background: #FFFFFF (white)
+- QR section background: #FFFFFF (white)
+- Message box background: #FFFFFF (white)
+- All text: #000000 (black)
+
+BORDERS:
+- No visible borders between sections
+- Clean, flush alignment between all sections
+
+FONTS:
+- Name box: Arial Bold or Helvetica Bold, 24-28pt
+- Message box: Arial Regular or Helvetica Regular, 10-11pt
+- Fallback fonts: system sans-serif
+
+IMAGE REQUIREMENTS:
+- Person photo: PNG format (preferred for transparency), minimum 900px height at 300 DPI
+- QR code: PNG format (preferred), square dimensions, minimum 255px x 255px
+- All images: RGB color mode
+
+PDF OUTPUT SETTINGS:
+- Page size: 3 x 7 inches (portrait)
+- Resolution: 300 DPI (for print quality)
+- Color space: RGB
+- Compression: Minimal (maintain quality)
+
+
+================================================================================
+DYNAMIC INPUTS REQUIRED
+================================================================================
+
+1. person_image_path: File path to person's portrait PNG
+   - Type: string (file path)
+   - Format: PNG (preferred) or JPG
+   - Minimum dimensions: 900px width, 1400px height (at 300 DPI)
+
+2. person_name: Full name/title of the person
+   - Type: string
+   - Example: "Dr. Rohit Sharma"
+   - Max length: ~25 characters (for single line)
+
+3. qr_code_path: File path to QR code image
+   - Type: string (file path)
+   - Format: PNG (preferred) or JPEG
+   - Dimensions: Square (minimum 255x255px at 300 DPI)
+
+4. message_text: (Optional - can be hardcoded)
+   - Type: string
+   - Example: "Know more about HPV related Cancer & its prevention in females and males."
+   - Max length: ~120 characters
+
+5. background_color: (Optional)
+   - Type: hex color string
+   - Default: "#A8D8F0"
+   - For photo section background
+
+
+================================================================================
+HTML/CSS STRUCTURE REQUIREMENTS
+================================================================================
+
+Page Setup:
+- Use CSS @page rule to set exact dimensions
+- Remove all default margins
+- Set page size to 3in x 7in portrait
+
+Box Model:
+- Use box-sizing: border-box for all elements
+- Ensure no margin collapse between sections
+- Use flexbox or CSS Grid for precise vertical centering
+
+Image Handling:
+- Use object-fit: contain for person image (maintain aspect ratio)
+- Use object-fit: none for QR code (no distortion)
+- Set explicit width/height in inches or points for all images
+
+Text Rendering:
+- Use web-safe fonts or embed custom fonts
+- Set text-rendering: optimizeLegibility
+- Ensure anti-aliasing for smooth text
+
+Print Optimization:
+- Use CSS: -webkit-print-color-adjust: exact
+- Set color-adjust: exact for accurate color reproduction
+- Avoid using vw/vh units (use absolute units: in, pt, px)
+
+
+================================================================================
+PYTHON SCRIPT REQUIREMENTS
+================================================================================
+
+Libraries:
+- weasyprint (recommended) or pdfkit or xhtml2pdf
+- Pillow (PIL) for image validation
+- Jinja2 (optional) for HTML templating
+
+Script Functions:
+1. validate_inputs()
+   - Check if image files exist
+   - Validate image dimensions and formats
+   - Validate text inputs (length, characters)
+
+2. generate_html()
+   - Create HTML with embedded CSS
+   - Insert dynamic content (images as base64 or file paths)
+   - Apply all styling specifications
+
+3. create_pdf()
+   - Convert HTML to PDF using chosen library
+   - Set page size to 3x7 inches
+   - Set DPI to 300 for print quality
+   - Output to specified file path
+
+4. main()
+   - Accept command-line arguments or config file
+   - Call validation, HTML generation, and PDF creation
+   - Handle errors gracefully
+   - Provide success/failure feedback
+
+
+Error Handling:
+- File not found errors for images
+- Invalid image format errors
+- Text overflow warnings
+- PDF generation failures
+- Output path write permission errors
+
+
+Output:
+- PDF file saved to specified location
+- Filename format: {person_name_slug}_card.pdf
+- Success message with output path
+- Optional: Return PDF as bytes for web serving
+
+
+================================================================================
+TESTING CHECKLIST
+================================================================================
+
+□ PDF dimensions are exactly 3.00" x 7.00" (verify in Adobe Acrobat)
+□ All sections are properly aligned (no gaps or overlaps)
+□ Person image is centered and properly scaled
+□ Name text is centered and readable
+□ QR code is scannable at printed size
+□ Message text is readable and properly formatted
+□ Colors match specifications (especially background blue)
+□ No compression artifacts in images
+□ PDF file size is reasonable (<500KB)
+□ Works with different name lengths
+□ Works with different image aspect ratios
+□ Page orientation is portrait (not landscape)
+
+================================================================================
+END OF SPECIFICATION
+================================================================================

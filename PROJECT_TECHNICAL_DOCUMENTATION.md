@@ -306,7 +306,7 @@ python generate_cards.py \
    - Complete tuning history (24 iterations)
    - Technical learnings and issue resolutions
 
-**PDF Generation (Stage 2):** Root directory
+**PDF Generation (Stage 2):** `pdf-generator/`
 6. **`generate_cards.py`** (400+ lines)
    - PDF generation logic
    - Layout engine
@@ -314,8 +314,8 @@ python generate_cards.py \
 
 ### Configuration Files
 - **`ai-pipeline/requirements.txt`:** AI pipeline dependencies
-- **`requirements.txt`:** PDF generation dependencies
-- **`config.json`:** Layout parameters (30+ fields)
+- **`pdf-generator/requirements.txt`:** PDF generation dependencies
+- **`pdf-generator/config.json`:** Layout parameters (30+ fields)
 - **`ai-pipeline/SETUP.txt`:** Deployment documentation
 
 ---
