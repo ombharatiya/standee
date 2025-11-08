@@ -46,7 +46,7 @@
   "_comment_padding": "Internal padding for text elements",
   "text_horizontal_padding_pt": 2,
   "name_box_horizontal_margin_pt": 25,
-  "bottom_box_horizontal_margin_pt": 25,
+  "bottom_box_horizontal_margin_pt": 0,
   
   "_comment_calculated": "Content width = page_width_pt - (2 * horizontal_padding_pt) = 196pt"
 }
