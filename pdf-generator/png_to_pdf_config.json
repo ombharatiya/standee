@@ -1,0 +1,24 @@
+{
+  "_comment": "PNG to PDF Conversion Configuration",
+
+  "_comment_page": "Page dimensions in points (1 inch = 72 points)",
+  "page_width_pt": 216,
+  "page_height_pt": 504,
+
+  "_comment_padding": "Padding around the PNG image in points",
+  "top_padding_pt": 0,
+  "bottom_padding_pt": 0,
+  "left_padding_pt": 0,
+  "right_padding_pt": 0,
+
+  "_comment_background": "Background color (hex format). Set to null or empty string for white background",
+  "background_color": "#8DC5FE",
+
+  "_comment_image": "Image placement options",
+  "center_image": true,
+  "fit_to_page": true,
+
+  "_comment_output": "Output configuration",
+  "output_directory": "output",
+  "output_suffix": "_pdf"
+}

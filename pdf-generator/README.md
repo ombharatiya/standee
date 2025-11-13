@@ -79,6 +79,33 @@ python generate_png_cards.py my_config.json
 
 **Note:** PNG generation uses the same `config.json` configuration as PDF generation. The PNG output is rendered at 4x resolution (288 DPI equivalent) for high-quality print output.
 
+### PNG to PDF Conversion
+
+Convert PNG images to PDF with configurable padding and background color:
+
+```bash
+# Convert single PNG file
+python convert_png_to_pdf.py image.png
+
+# Convert single PNG with custom output path
+python convert_png_to_pdf.py image.png -o output.pdf
+
+# Convert all PNGs in a directory
+python convert_png_to_pdf.py -d output/
+
+# Use custom config
+python convert_png_to_pdf.py image.png -c my_config.json
+```
+
+**Configuration options** (in `png_to_pdf_config.json`):
+- `page_width_pt`, `page_height_pt`: Output PDF dimensions (default: 216pt × 504pt)
+- `top_padding_pt`, `bottom_padding_pt`, `left_padding_pt`, `right_padding_pt`: Padding around image
+- `background_color`: Background color in hex format (default: `#8DC5FE`). Set to empty string for white
+- `center_image`: Center image on page (default: `true`)
+- `fit_to_page`: Scale image to fit within available space (default: `true`)
+
+**Use case:** This is useful when you generate PNGs and want to convert them to PDFs with the same frame size, or when you need to add padding/background to existing PNG images.
+
 ## Input CSV Format
 
 ```csv
@@ -130,6 +157,11 @@ Files are saved to the output directory with sanitized filenames:
 - `rupali_chandane_card.png` (864 × 2016 pixels at 288 DPI)
 - `dr_pravin_jadhav_card.png`
 - `sarena_mohan_varghese_mbbs_dch_dnb_card.png`
+
+**PNG-to-PDF converted output:**
+- `rupali_chandane_pdf.pdf` (converted from PNG with configurable background/padding)
+
+**Sample outputs** are available in the `samples/` directory for reference.
 
 ## Example Configuration
 
