@@ -1,8 +1,8 @@
-# PDF Card Generator
+# Card Generator (PDF & PNG)
 
 **Part 2 of DiffusionID Project**
 
-Generates 3" x 7" portrait PDF cards with person images, names, QR codes, and custom messages. Features intelligent text wrapping, conditional layouts, and fully configurable dimensions.
+Generates 3" x 7" portrait cards (PDF or PNG) with person images, names, QR codes, and custom messages. Features intelligent text wrapping, conditional layouts, and fully configurable dimensions.
 
 ## Installation
 
@@ -53,9 +53,11 @@ Edit `config.json` to customize all aspects of the PDF layout. All dimensions ar
 - `input_csv`: Path to CSV file with person data
 - `qr_code_path`: Path to QR code image
 - `message_text`: Custom message (supports `<br/>` for line breaks)
-- `background_color`: Background color (hex, e.g., `#8DC5FE`)
+- `background_color`: Background color (hex, e.g., `#8DC5FE`) or `"transparent"` for PNG with transparent background
 
 ## Usage
+
+### PDF Generation
 
 ```bash
 # Use default config.json
@@ -64,6 +66,47 @@ python generate_cards.py
 # Use custom config file
 python generate_cards.py my_config.json
 ```
+
+### PNG Generation
+
+```bash
+# Use default config.json (generates high-res PNGs at 4x scale = 288 DPI)
+python generate_png_cards.py
+
+# Use custom config file
+python generate_png_cards.py my_config.json
+```
+
+**Note:** PNG generation uses the same `config.json` configuration as PDF generation. The PNG output is rendered at 4x resolution (288 DPI equivalent) for high-quality print output.
+
+**Transparent Background:** To generate PNGs with transparent background instead of colored background, set `background_color` to `"transparent"` in `config.json`. This is useful when you want to overlay the cards on different backgrounds or for further image processing.
+
+### PNG to PDF Conversion
+
+Convert PNG images to PDF with configurable padding and background color:
+
+```bash
+# Convert single PNG file
+python convert_png_to_pdf.py image.png
+
+# Convert single PNG with custom output path
+python convert_png_to_pdf.py image.png -o output.pdf
+
+# Convert all PNGs in a directory
+python convert_png_to_pdf.py -d output/
+
+# Use custom config
+python convert_png_to_pdf.py image.png -c my_config.json
+```
+
+**Configuration options** (in `png_to_pdf_config.json`):
+- `page_width_pt`, `page_height_pt`: Output PDF dimensions (default: 216pt × 504pt)
+- `top_padding_pt`, `bottom_padding_pt`, `left_padding_pt`, `right_padding_pt`: Padding around image
+- `background_color`: Background color in hex format (default: `#8DC5FE`). Set to empty string for white
+- `center_image`: Center image on page (default: `true`)
+- `fit_to_page`: Scale image to fit within available space (default: `true`)
+
+**Use case:** This is useful when you generate PNGs and want to convert them to PDFs with the same frame size, or when you need to add padding/background to existing PNG images.
 
 ## Input CSV Format
 
@@ -105,10 +148,26 @@ Images are automatically scaled and centered to fit the photo section while main
 
 ## Output
 
-PDFs are saved to the output directory with sanitized filenames:
+Files are saved to the output directory with sanitized filenames:
+
+**PDF output:**
 - `rupali_chandane_card.pdf`
 - `dr_pravin_jadhav_card.pdf`
 - `sarena_mohan_varghese_mbbs_dch_dnb_card.pdf`
+
+**PNG output:**
+- `rupali_chandane_card.png` (864 × 2016 pixels at 288 DPI)
+- `dr_pravin_jadhav_card.png`
+- `sarena_mohan_varghese_mbbs_dch_dnb_card.png`
+
+**PNG-to-PDF converted output:**
+- `rupali_chandane_pdf.pdf` (converted from PNG with configurable background/padding)
+
+**Sample outputs** are available in the `samples/` directory for reference:
+- `rupali_chandane.png` - PNG with colored background
+- `rupali_chandane_transparent.png` - PNG with transparent background (RGBA)
+- `sample_direct_pdf.pdf` - PDF generated directly from card generator
+- `sample_converted_pdf.pdf` - PDF converted from PNG
 
 ## Example Configuration
 
