@@ -1,8 +1,8 @@
-# PDF Card Generator
+# Card Generator (PDF & PNG)
 
 **Part 2 of DiffusionID Project**
 
-Generates 3" x 7" portrait PDF cards with person images, names, QR codes, and custom messages. Features intelligent text wrapping, conditional layouts, and fully configurable dimensions.
+Generates 3" x 7" portrait cards (PDF or PNG) with person images, names, QR codes, and custom messages. Features intelligent text wrapping, conditional layouts, and fully configurable dimensions.
 
 ## Installation
 
@@ -57,6 +57,8 @@ Edit `config.json` to customize all aspects of the PDF layout. All dimensions ar
 
 ## Usage
 
+### PDF Generation
+
 ```bash
 # Use default config.json
 python generate_cards.py
@@ -64,6 +66,18 @@ python generate_cards.py
 # Use custom config file
 python generate_cards.py my_config.json
 ```
+
+### PNG Generation
+
+```bash
+# Use default config.json (generates high-res PNGs at 4x scale = 288 DPI)
+python generate_png_cards.py
+
+# Use custom config file
+python generate_png_cards.py my_config.json
+```
+
+**Note:** PNG generation uses the same `config.json` configuration as PDF generation. The PNG output is rendered at 4x resolution (288 DPI equivalent) for high-quality print output.
 
 ## Input CSV Format
 
@@ -105,10 +119,17 @@ Images are automatically scaled and centered to fit the photo section while main
 
 ## Output
 
-PDFs are saved to the output directory with sanitized filenames:
+Files are saved to the output directory with sanitized filenames:
+
+**PDF output:**
 - `rupali_chandane_card.pdf`
 - `dr_pravin_jadhav_card.pdf`
 - `sarena_mohan_varghese_mbbs_dch_dnb_card.pdf`
+
+**PNG output:**
+- `rupali_chandane_card.png` (864 × 2016 pixels at 288 DPI)
+- `dr_pravin_jadhav_card.png`
+- `sarena_mohan_varghese_mbbs_dch_dnb_card.png`
 
 ## Example Configuration
 
